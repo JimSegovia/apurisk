@@ -1,0 +1,11 @@
+build/
+obj/
+bin/
+tools/
+*.xlam
+*.zip
+*.xlsm
+*.xlsx
+~$*.xls*
+*.tmp
+*.log

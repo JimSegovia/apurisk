@@ -1,0 +1,26 @@
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{A3310E9B-972A-402A-82DD-0108930351E7}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Apurisk.Application</RootNamespace>
+    <AssemblyName>Apurisk.Application</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <OutputPath>..\..\build\$(Configuration)\</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <ProjectReference Include="..\Apurisk.Core\Apurisk.Core.csproj">
+      <Project>{F8863A4E-7340-4B76-9B7C-BF39CE8C1056}</Project>
+      <Name>Apurisk.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="BowTieModuleController.cs" />
+    <Compile Include="Excel\IExcelWorkbookGateway.cs" />
+    <Compile Include="Excel\SheetDefinition.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

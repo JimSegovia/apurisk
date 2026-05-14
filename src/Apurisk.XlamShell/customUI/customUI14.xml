@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui">
+  <ribbon>
+    <tabs>
+      <tab id="tabApurisk" label="Apurisk">
+        <group id="grpBowTie" label="Analisis BowTie">
+          <button id="btnBowTieAnalysis" label="Analisis BowTie" size="large" imageMso="DiagramTargetInsertClassic" onAction="Apurisk_OpenBowTieIntake"/>
+          <button id="btnOpenTree" label="Arbol RBS" size="large" imageMso="OrganizationChartInsert" onAction="Apurisk_OpenRbsTree"/>
+          <button id="btnOpenBowTie" label="Abrir BowTie" size="large" imageMso="DiagramExpand" onAction="Apurisk_OpenBowTie"/>
+          <separator id="sepBowTieActions"/>
+          <button id="btnValidate" label="Validar" imageMso="AcceptInvitation" onAction="Apurisk_ValidateSelection"/>
+          <button id="btnInsertValues" label="Insertar valores" imageMso="TableUpdate" onAction="Apurisk_InsertValues"/>
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>
