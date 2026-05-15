@@ -25,6 +25,7 @@
     <Compile Include="Diagnostics\AddInLog.cs" />
     <Compile Include="Excel\ExcelWorkbookGateway.cs" />
     <Compile Include="Forms\BowTieIntakeForm.cs" />
+    <Compile Include="Forms\RbsTreeForm.cs" />
     <Compile Include="Ribbon\RibbonXml.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

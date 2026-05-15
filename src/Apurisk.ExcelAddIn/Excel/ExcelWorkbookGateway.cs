@@ -8,8 +8,6 @@ namespace Apurisk.ExcelAddIn.Excel
     {
         private readonly object _excelApplication;
 
-        private const string APURISK_XML_NS = "http://apurisk.dev/config";
-
         public ExcelWorkbookGateway(object excelApplication)
         {
             _excelApplication = excelApplication;
@@ -78,70 +76,21 @@ namespace Apurisk.ExcelAddIn.Excel
 
         public string ReadConfigValue(string keyName)
         {
-            dynamic excel = _excelApplication;
-            dynamic workbook = excel.ActiveWorkbook;
-            if (workbook == null) return string.Empty;
-
             try
             {
-                dynamic part = GetOrCreateConfigPart(workbook);
-                if (part == null) return string.Empty;
-
-                string xml = part.XML;
+                string xml = GetConfigXml();
                 if (string.IsNullOrEmpty(xml)) return string.Empty;
 
                 XmlDocument doc = new XmlDocument();
                 doc.LoadXml(xml);
 
-                XmlNamespaceManager nsmgr = new XmlNamespaceManager(doc.NameTable);
-                nsmgr.AddNamespace("a", APURISK_XML_NS);
-
-                XmlNode node = doc.SelectSingleNode("//a:e[@k='" + XmlEscape(keyName) + "']", nsmgr);
+                XmlNode node = doc.SelectSingleNode("//e[@k='" + XmlEscape(keyName) + "']");
                 return node != null ? (node.Attributes["v"].Value ?? string.Empty) : string.Empty;
             }
             catch
             {
                 return string.Empty;
             }
-        }
-
-        public void WriteConfigValue(string keyName, string keyValue)
-        {
-            dynamic excel = _excelApplication;
-            dynamic workbook = excel.ActiveWorkbook;
-            if (workbook == null) return;
-
-            try
-            {
-                dynamic part = GetOrCreateConfigPart(workbook);
-                if (part == null) return;
-
-                string xml = part.XML;
-                XmlDocument doc = new XmlDocument();
-                doc.LoadXml(string.IsNullOrEmpty(xml)
-                    ? "<?xml version=\"1.0\"?><c xmlns=\"" + APURISK_XML_NS + "\"/>"
-                    : xml);
-
-                XmlNamespaceManager nsmgr = new XmlNamespaceManager(doc.NameTable);
-                nsmgr.AddNamespace("a", APURISK_XML_NS);
-
-                XmlNode node = doc.SelectSingleNode("//a:e[@k='" + XmlEscape(keyName) + "']", nsmgr);
-
-                if (node != null)
-                {
-                    node.Attributes["v"].Value = keyValue;
-                }
-                else
-                {
-                    XmlElement elem = doc.CreateElement("e", APURISK_XML_NS);
-                    elem.SetAttribute("k", keyName);
-                    elem.SetAttribute("v", keyValue);
-                    doc.DocumentElement.AppendChild(elem);
-                }
-
-                part.LoadXML(doc.OuterXml);
-            }
-            catch { }
         }
 
         public int GetImpactFieldCount()
@@ -153,25 +102,109 @@ namespace Apurisk.ExcelAddIn.Excel
             return count;
         }
 
-        public bool RiskIdExists(string riskIdAddress, string riskIdValue)
+        public System.Collections.Generic.List<RbsRow> ReadRbsFromRanges()
         {
+            var result = new System.Collections.Generic.List<RbsRow>();
+
+            string codeAddr = ReadConfigValue("Field.RbsCodeRange");
+            string nameAddr = ReadConfigValue("Field.RbsNameRange");
+
+            if (string.IsNullOrEmpty(codeAddr))
+                return result;
+
             dynamic excel = _excelApplication;
+            dynamic workbook = excel.ActiveWorkbook;
+            if (workbook == null) return result;
+
             try
             {
-                dynamic range = excel.ActiveWorkbook.Range(riskIdAddress);
-                foreach (dynamic cell in range.Cells)
+                dynamic codeRange = workbook.Range(codeAddr);
+                dynamic nameRange = string.IsNullOrEmpty(nameAddr) ? null : workbook.Range(nameAddr);
+
+                long maxRows = codeRange.Rows.Count;
+
+                for (long row = 1; row <= maxRows; row++)
                 {
-                    string cellValue = cell.Value2 != null ? cell.Value2.ToString().Trim() : string.Empty;
-                    if (string.Equals(cellValue, riskIdValue, StringComparison.OrdinalIgnoreCase))
-                        return true;
+                    object codeObj = codeRange.Cells[row, 1].Value2;
+                    string code = codeObj != null ? codeObj.ToString().Trim() : string.Empty;
+
+                    if (!string.IsNullOrEmpty(code))
+                    {
+                        string name = string.Empty;
+                        if (nameRange != null && row <= nameRange.Rows.Count)
+                        {
+                            object nameObj = nameRange.Cells[row, 1].Value2;
+                            name = nameObj != null ? nameObj.ToString().Trim() : string.Empty;
+                        }
+
+                        result.Add(new RbsRow { Code = code, Name = name });
+                    }
                 }
             }
             catch { }
-            return false;
+
+            return result;
+        }
+
+        public System.Collections.Generic.List<RiskRow> ReadRisksFromRanges()
+        {
+            var result = new System.Collections.Generic.List<RiskRow>();
+
+            string idAddr = ReadConfigValue("Field.RiskIdRange");
+            string rbsAddr = ReadConfigValue("Field.RiskRbsCodeRange");
+            string descAddr = ReadConfigValue("Field.RiskDescriptionRange");
+
+            if (string.IsNullOrEmpty(idAddr))
+                return result;
+
+            dynamic excel = _excelApplication;
+            dynamic workbook = excel.ActiveWorkbook;
+            if (workbook == null) return result;
+
+            try
+            {
+                dynamic idRange = workbook.Range(idAddr);
+                dynamic rbsRange = string.IsNullOrEmpty(rbsAddr) ? null : workbook.Range(rbsAddr);
+                dynamic descRange = string.IsNullOrEmpty(descAddr) ? null : workbook.Range(descAddr);
+
+                long maxRows = idRange.Rows.Count;
+
+                for (long row = 1; row <= maxRows; row++)
+                {
+                    object idObj = idRange.Cells[row, 1].Value2;
+                    string id = idObj != null ? idObj.ToString().Trim() : string.Empty;
+
+                    if (!string.IsNullOrEmpty(id))
+                    {
+                        string rbsCode = string.Empty;
+                        if (rbsRange != null && row <= rbsRange.Rows.Count)
+                        {
+                            object rbsObj = rbsRange.Cells[row, 1].Value2;
+                            rbsCode = rbsObj != null ? rbsObj.ToString().Trim() : string.Empty;
+                        }
+
+                        string desc = string.Empty;
+                        if (descRange != null && row <= descRange.Rows.Count)
+                        {
+                            object descObj = descRange.Cells[row, 1].Value2;
+                            desc = descObj != null ? descObj.ToString().Trim() : string.Empty;
+                        }
+
+                        result.Add(new RiskRow { Id = id, RbsCode = rbsCode, Description = desc });
+                    }
+                }
+            }
+            catch { }
+
+            return result;
         }
 
         public void SaveAllConfig(Forms.BowTieIntakeForm form)
         {
+            dynamic excel = _excelApplication;
+            dynamic workbook = excel.ActiveWorkbook;
+            if (workbook == null) return;
+
             string[] fields =
             {
                 "RbsNameRange", "RbsCodeRange", "RiskTableRange", "RiskIdRange", "RiskTopRange",
@@ -180,23 +213,65 @@ namespace Apurisk.ExcelAddIn.Excel
                 "RiskMitigationRange", "RiskOwnerRange"
             };
 
+            XmlDocument doc = new XmlDocument();
+            XmlElement root = doc.CreateElement("apurisk");
+            doc.AppendChild(root);
+
             foreach (var field in fields)
             {
                 string value = form.GetFieldValue(field) ?? string.Empty;
-                WriteConfigValue("Field." + field, value);
+                XmlElement elem = doc.CreateElement("e");
+                elem.SetAttribute("k", "Field." + field);
+                elem.SetAttribute("v", value);
+                root.AppendChild(elem);
             }
 
             string[] impactKeys = form.GetImpactFieldKeys();
             for (int i = 0; i < impactKeys.Length; i++)
             {
                 string value = form.GetFieldValue(impactKeys[i]) ?? string.Empty;
-                WriteConfigValue("Field." + impactKeys[i], value);
+                XmlElement elem = doc.CreateElement("e");
+                elem.SetAttribute("k", "Field." + impactKeys[i]);
+                elem.SetAttribute("v", value);
+                root.AppendChild(elem);
             }
 
-            WriteConfigValue("ImpactFieldCount", form.ImpactCount.ToString());
+            XmlElement countElem = doc.CreateElement("e");
+            countElem.SetAttribute("k", "ImpactFieldCount");
+            countElem.SetAttribute("v", form.ImpactCount.ToString());
+            root.AppendChild(countElem);
+
+            WriteConfigXml(workbook, doc.OuterXml);
         }
 
-        private dynamic GetOrCreateConfigPart(dynamic workbook)
+        private string GetConfigXml()
+        {
+            dynamic excel = _excelApplication;
+            dynamic workbook = excel.ActiveWorkbook;
+            if (workbook == null) return string.Empty;
+
+            try
+            {
+                foreach (dynamic part in workbook.CustomXMLParts)
+                {
+                    try
+                    {
+                        string xml = part.XML as string;
+                        if (xml != null && xml.Contains("<apurisk"))
+                            return xml;
+                    }
+                    catch { }
+                }
+
+                return string.Empty;
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private void WriteConfigXml(dynamic workbook, string xml)
         {
             try
             {
@@ -204,20 +279,19 @@ namespace Apurisk.ExcelAddIn.Excel
                 {
                     try
                     {
-                        string ns = part.NamespaceURI as string;
-                        if (ns == APURISK_XML_NS)
-                            return part;
+                        string partXml = part.XML as string;
+                        if (partXml != null && partXml.Contains("<apurisk"))
+                        {
+                            part.Delete();
+                            break;
+                        }
                     }
                     catch { }
                 }
 
-                string initXml = "<?xml version=\"1.0\"?><c xmlns=\"" + APURISK_XML_NS + "\"/>";
-                return workbook.CustomXMLParts.Add(initXml);
+                workbook.CustomXMLParts.Add(xml);
             }
-            catch
-            {
-                return null;
-            }
+            catch { }
         }
 
         private static string XmlEscape(string value)
@@ -272,5 +346,18 @@ namespace Apurisk.ExcelAddIn.Excel
 
             return null;
         }
+    }
+
+    public sealed class RbsRow
+    {
+        public string Code { get; set; }
+        public string Name { get; set; }
+    }
+
+    public sealed class RiskRow
+    {
+        public string Id { get; set; }
+        public string RbsCode { get; set; }
+        public string Description { get; set; }
     }
 }

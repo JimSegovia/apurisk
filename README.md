@@ -53,7 +53,7 @@ Dentro del formulario:
 1. Haz clic en un campo blanco (se resalta en azul).
 2. Presiona **"Seleccionar rango"**.
 3. Excel abre el selector nativo de rangos.
-4. El rango queda guardado y se restaura al reabrir el formulario.
+4. Presiona **"Aceptar"** para guardar. Los datos se persisten automaticamente.
 
 Campos:
 
@@ -73,7 +73,18 @@ Campos:
 - Medidas de mitigacion
 - Persona responsable
 
-Ademas hay una zona de **Impactos adicionales** con el boton `+ Impacto`.
+Ademas hay una zona de **Impactos adicionales** con los botones `+ Impacto` y `- Impacto`.
+
+## Arbol RBS
+
+El boton **"Arbol RBS"** abre una ventana en pantalla completa con el arbol jerarquico de categorias RBS, construido a partir de los rangos configurados en "Ingresar valores".
+
+- Los nodos muestran el codigo RBS y su nombre.
+- **Click en un nodo**: expande o colapsa sus subcategorias.
+- Los nodos hoja (sin subcategorias) muestran los riesgos asociados (ID + descripcion), leidos de los rangos de la tabla maestra.
+- Botones **"Expandir todo"** / **"Colapsar todo"** para control global.
+- Layout tipo arbol de decision: izquierda → derecha, hijos centrados verticalmente respecto al padre.
+- Fondo blanco, paleta de colores sobria tipo Office.
 
 ## Estructura del proyecto
 
@@ -86,6 +97,8 @@ src/
     BowTieBootstrapper.cs   Orquestador de acciones
     Excel/               Gateway de comunicacion con Excel
     Forms/               Formularios Windows Forms
+      BowTieIntakeForm.cs   Captura de rangos
+      RbsTreeForm.cs        Arbol RBS interactivo
     Ribbon/              XML del ribbon
   Apurisk.XlamShell/     Shell VBA (legacy, reemplazado por el add-in C#)
 scripts/
@@ -102,5 +115,5 @@ docs/
 - Add-in COM en C# con ribbon nativo.
 - Formulario Windows Forms para captura de rangos RBS y tabla maestra.
 - Selector visual de rangos usando el InputBox nativo de Excel.
-- Persistencia de rangos en hoja `Apurisk_Config`.
-- Snapshots automaticos en hojas `Apurisk_RBS` y `Apurisk_RiskMaster_Map`.
+- Persistencia interna via CustomXMLParts (datos invisibles dentro del archivo, sin hojas extra).
+- Arbol RBS interactivo con navegacion jerarquica y riesgos asociados en nodos hoja.

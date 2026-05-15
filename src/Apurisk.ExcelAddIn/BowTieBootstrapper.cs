@@ -38,9 +38,19 @@ namespace Apurisk.ExcelAddIn
             }
         }
 
-        public void OpenRbsExplorerPlaceholder()
+        public void OpenRbsExplorer()
         {
-            MessageBox.Show("Aqui abriremos la vista de arbol RBS.", "Apurisk - Analisis BowTie", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (!_workbook.HasActiveWorkbook)
+            {
+                MessageBox.Show("No hay un libro activo para trabajar.", "Apurisk",
+                    MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                return;
+            }
+
+            using (var form = new RbsTreeForm(_workbook))
+            {
+                form.ShowDialog();
+            }
         }
 
         public void OpenBowTiePlaceholder()

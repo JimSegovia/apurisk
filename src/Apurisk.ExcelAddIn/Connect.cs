@@ -71,7 +71,7 @@ namespace Apurisk.ExcelAddIn
         public void OnOpenRbsExplorer(object control)
         {
             AddInLog.Write("OnOpenRbsExplorer");
-            _bowTie.OpenRbsExplorerPlaceholder();
+            _bowTie.OpenRbsExplorer();
         }
 
         public void OnOpenBowTie(object control)
