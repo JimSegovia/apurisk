@@ -1,12 +1,10 @@
 VERSION 5.00
-Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmApuriskBowTieIntake 
-   BorderStyle    =   1  'Fixed Single 
-   Zoom           =   75
-Caption         =   "Apurisk - Ingresar Valores BowTie"
-   ClientHeight    =   6240
+Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmApuriskBowTieIntake
+   Caption         =   "Apurisk - Ingresar Valores BowTie"
+   ClientHeight    =   4680
    ClientLeft      =   108
    ClientTop       =   456
-   ClientWidth     =   11400
+   ClientWidth     =   8550
    OleObjectBlob   =   "frmApuriskBowTieIntake.frx":0000
    StartUpPosition = 1  'Centrar en propietario
 End

@@ -76,6 +76,7 @@ Invoke-Csc `
     -References ($commonReferences + @(
         "$framework\Microsoft.CSharp.dll",
         "$framework\System.Windows.Forms.dll",
+        "$framework\System.Xml.dll",
         $extensibility,
         $office
     ))

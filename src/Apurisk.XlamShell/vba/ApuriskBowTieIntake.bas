@@ -10,7 +10,8 @@ Public Sub Apurisk_StartBowTieIntake()
         Exit Sub
     End If
 
-    Apurisk_EnsureWorkbookBase False
+    ' Nota: Las hojas de Apurisk deben crearse manualmente si se necesitan
+    ' Apurisk_EnsureWorkbookBase False
     frmApuriskBowTieIntake.Show vbModeless
     Apurisk_SetLastAction "Apurisk_StartBowTieIntake"
 End Sub

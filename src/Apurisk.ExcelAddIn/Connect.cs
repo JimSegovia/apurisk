@@ -91,5 +91,11 @@ namespace Apurisk.ExcelAddIn
             AddInLog.Write("OnInsertValues");
             _bowTie.InsertValuesPlaceholder();
         }
+
+        public void OnBowTieIntake(object control)
+        {
+            AddInLog.Write("OnBowTieIntake");
+            _bowTie.OpenBowTieIntake();
+        }
     }
 }

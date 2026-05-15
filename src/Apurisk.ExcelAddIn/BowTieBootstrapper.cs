@@ -1,5 +1,6 @@
 using System.Windows.Forms;
 using Apurisk.ExcelAddIn.Excel;
+using Apurisk.ExcelAddIn.Forms;
 
 namespace Apurisk.ExcelAddIn
 {
@@ -14,13 +15,27 @@ namespace Apurisk.ExcelAddIn
 
         public void CreateInitialWorkbookBase()
         {
-            _workbook.EnsureSheet("Apurisk_Config", new[] { "Parametro", "Valor", "Notas" });
             _workbook.EnsureSheet("Apurisk_RBS", new[] { "CodigoRBS", "Nombre", "PadreRBS", "Nivel", "Descripcion" });
             _workbook.EnsureSheet("Apurisk_RiskMaster_Map", new[] { "CampoApurisk", "ColumnaExcel", "Obligatorio", "Notas" });
             _workbook.EnsureSheet("Apurisk_BowTie_Work", new[] { "RiskID", "RBS", "Elemento", "Tipo", "Valor", "Owner", "Efectividad", "Notas" });
             _workbook.EnsureSheet("Apurisk_Diagram", new[] { "Area reservada para el diagrama BowTie" });
-            _workbook.ActivateSheet("Apurisk_Config");
+            _workbook.ActivateSheet("Apurisk_RBS");
             MessageBox.Show("Base inicial creada para Apurisk.", "Apurisk", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        public void OpenBowTieIntake()
+        {
+            if (!_workbook.HasActiveWorkbook)
+            {
+                MessageBox.Show("No hay un libro activo para trabajar.", "Apurisk",
+                    MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                return;
+            }
+
+            using (var form = new BowTieIntakeForm(_workbook))
+            {
+                form.ShowDialog();
+            }
         }
 
         public void OpenRbsExplorerPlaceholder()

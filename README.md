@@ -1,97 +1,106 @@
 # Apurisk
 
-Apurisk es una base de extension para Excel orientada a estadistica y gestion de riesgos. El primer modulo sera **Analisis BowTie**.
+Apurisk es una extension COM para Excel orientada a estadistica y gestion de riesgos. El primer modulo es **Analisis BowTie**.
+
+## Requisitos
+
+- Windows con .NET Framework 4.0+
+- Excel 2013 / 2016 / Office 365 (con PIA de Office en GAC)
+- PowerShell 5+
 
 ## Arranque rapido
 
-Base COM experimental:
-
 ```powershell
-.\scripts\build.ps1
+# 1. Compilar
+.\scripts\build.ps1 -Configuration Debug
+
+# 2. Registrar en Excel
+.\scripts\register-addin.ps1 -Configuration Debug
+
+# 3. Abrir Excel -> pestana "Apurisk" -> boton "Ingresar valores"
 ```
 
-Shell XLAM actual:
+Si el add-in no aparece:
 
 ```powershell
-src\Apurisk.XlamShell\
+.\scripts\enable-addin.ps1
+```
+
+## Despues de hacer cambios en el codigo
+
+Cada vez que modifiques archivos `.cs` en `src/Apurisk.ExcelAddIn/`, ejecuta estos 3 pasos:
+
+```powershell
+# 1. Recompilar
+.\scripts\build.ps1 -Configuration Debug
+
+# 2. Si Excel esta abierto, CIERRALO antes de continuar
+
+# 3. Re-registrar (el script sobreescribe las entradas del registro)
+.\scripts\register-addin.ps1 -Configuration Debug
+
+# 4. Abrir Excel y probar
+```
+
+> **Importante**: Siempre cierra Excel antes de recompilar/registrar, o el DLL nuevo no se cargara.
+
+## Flujo del boton principal
+
+El boton **"Ingresar valores"** en la pestana `Apurisk` abre el formulario de captura de rangos.
+
+Dentro del formulario:
+
+1. Haz clic en un campo blanco (se resalta en azul).
+2. Presiona **"Seleccionar rango"**.
+3. Excel abre el selector nativo de rangos.
+4. El rango queda guardado y se restaura al reabrir el formulario.
+
+Campos:
+
+- Nombre RBS
+- Codigo RBS
+- Seleccion automatica
+- ID
+- TOP
+- Codigo RBS del riesgo
+- Nombre RBS del riesgo
+- Descripcion del riesgo
+- Causas clave
+- Impacto / efecto potencial
+- Probabilidad
+- Impacto
+- Gravedad
+- Medidas de mitigacion
+- Persona responsable
+
+Ademas hay una zona de **Impactos adicionales** con el boton `+ Impacto`.
+
+## Estructura del proyecto
+
+```
+src/
+  Apurisk.Core/          Modelos de dominio (RBS, BowTie, RiskItem)
+  Apurisk.Application/   Capa de aplicacion (controllers, gateways)
+  Apurisk.ExcelAddIn/    Add-in COM para Excel
+    Connect.cs           Punto de entrada COM + ribbon callbacks
+    BowTieBootstrapper.cs   Orquestador de acciones
+    Excel/               Gateway de comunicacion con Excel
+    Forms/               Formularios Windows Forms
+    Ribbon/              XML del ribbon
+  Apurisk.XlamShell/     Shell VBA (legacy, reemplazado por el add-in C#)
+scripts/
+  build.ps1              Compila todos los proyectos
+  register-addin.ps1     Registra el add-in COM en el registro de Windows
+  enable-addin.ps1       Reactiva el add-in si Excel lo deshabilito
+docs/
+  apurisk_arquitectura_inicial.md
+  apurisk_architecture_log.md
 ```
 
 ## Estado actual
 
-La base incluye:
-
-- Shell `XLAM + VBA` con Ribbon `Apurisk`.
-- Grupo inicial `Analisis BowTie`.
-- Boton principal `Analisis BowTie` para iniciar la captura del modulo.
-- Botones `Arbol RBS`, `Abrir BowTie`, `Validar` e `Insertar valores`.
-- Modelo inicial de RBS, tabla maestra y BowTie.
-- Popup unificado para capturar rangos de RBS y tabla maestra, con estilo mas cercano al look nativo de Excel/VBA.
-- Seleccion visual de rangos usando el selector nativo de Excel.
-- Persistencia de rangos y del ID elegido para poder corregir valores luego.
-- `Office RibbonX Editor` instalado localmente para editar `customUI`.
-
-## Herramienta RibbonX
-
-Usaremos `Office RibbonX Editor` de `fernandreu` como editor oficial de la parte `customUI` del add-in:
-
-- Repositorio oficial: [fernandreu/office-ribbonx-editor](https://github.com/fernandreu/office-ribbonx-editor)
-- Release usada para esta base: `v1.9.0`
-- Variante instalada: `OfficeRibbonXEditor-NETFramework-Binaries.zip`
-- Ruta local: [tools/OfficeRibbonXEditor](D:/JimRisk/RiskCode/Apurisk/tools/OfficeRibbonXEditor)
-- Ejecutable: [OfficeRibbonXEditor.exe](D:/JimRisk/RiskCode/Apurisk/tools/OfficeRibbonXEditor/OfficeRibbonXEditor.exe)
-- Script de apertura: [scripts/open-ribbonx-editor.ps1](D:/JimRisk/RiskCode/Apurisk/scripts/open-ribbonx-editor.ps1)
-
-Detalles importantes tomados del repositorio oficial:
-
-- El editor es una herramienta standalone para editar la parte `Custom UI` de archivos Office abiertos como `xlsx`, `xlsm`, `xlam`, `pptm` o `docx`.
-- La release `v1.9.0` recomienda usar el instalador o binarios `.NET Framework` si hay duda.
-- Desde `v2.0` ya no se soporta `.NET Framework`; la ultima version `.NET Framework` indicada por el proyecto es `v1.9`.
-- El archivo Office se trata como un `.zip`; por eso conviene cerrar Excel antes de editar `customUI` y luego volver a abrir el archivo para ver cambios limpios.
-
-## Flujo XLAM
-
-Para ver `Apurisk` en Excel con el enfoque actual:
-
-1. Crear un libro nuevo en Excel.
-2. Guardarlo como `Apurisk.xlam`.
-3. Importar los modulos `.bas` desde [src/Apurisk.XlamShell/vba](D:/JimRisk/RiskCode/Apurisk/src/Apurisk.XlamShell/vba).
-4. Importar la UserForm [frmApuriskBowTieIntake.frm](D:/JimRisk/RiskCode/Apurisk/src/Apurisk.XlamShell/forms/frmApuriskBowTieIntake.frm).
-5. Verificar que [frmApuriskBowTieIntake.frx](D:/JimRisk/RiskCode/Apurisk/src/Apurisk.XlamShell/forms/frmApuriskBowTieIntake.frx) este en la misma carpeta durante la importacion.
-6. Abrir `Apurisk.xlam` con [OfficeRibbonXEditor.exe](D:/JimRisk/RiskCode/Apurisk/tools/OfficeRibbonXEditor/OfficeRibbonXEditor.exe).
-7. Insertar o reemplazar el XML con [customUI14.xml](D:/JimRisk/RiskCode/Apurisk/src/Apurisk.XlamShell/customUI/customUI14.xml).
-8. Guardar el `xlam`, cerrar Excel si estaba abierto y volver a abrirlo.
-9. Activar el complemento `Apurisk.xlam` en Excel.
-
-## Flujo actual del boton principal
-
-El boton `Analisis BowTie` abre un popup unificado llamado `Analisis BowTie - Ingresar Valores`.
-
-Dentro del popup:
-
-1. Seleccionas un cuadro blanco.
-2. Presionas `cargar rangos de celda`.
-3. Excel abre el selector visual de rangos.
-4. El rango queda guardado y se vuelve a mostrar cuando reabres el popup.
-
-Campos principales:
-
-- `Nombre RBS`
-- `Codigo RBS`
-- `Seleccion automatica`
-- `ID`
-- `TOP`
-- `Codigo RBS del riesgo`
-- `Nombre RBS del riesgo`
-- `Descripcion del riesgo`
-- `Causas clave`
-- `Impacto / efecto potencial`
-- `Probabilidad`
-- `Impacto`
-- `Gravedad`
-- `Medidas de mitigacion`
-- `Persona responsable`
-- `ID del riesgo a analizar`
-
-Ademas hay una zona de `Impactos adicionales` con `agregar impacto`.
-
-La arquitectura inicial esta documentada en [docs/apurisk_arquitectura_inicial.md](/D:/JimRisk/RiskCode/Apurisk/docs/apurisk_arquitectura_inicial.md) y el log continuo en [docs/apurisk_architecture_log.md](/D:/JimRisk/RiskCode/Apurisk/docs/apurisk_architecture_log.md).
+- Add-in COM en C# con ribbon nativo.
+- Formulario Windows Forms para captura de rangos RBS y tabla maestra.
+- Selector visual de rangos usando el InputBox nativo de Excel.
+- Persistencia de rangos en hoja `Apurisk_Config`.
+- Snapshots automaticos en hojas `Apurisk_RBS` y `Apurisk_RiskMaster_Map`.
