@@ -139,3 +139,43 @@ La primera version del popup ya funcionaba, pero se seguia viendo demasiado gene
 - validar visualmente el popup dentro de Excel;
 - hacer ajustes finos de espaciado o tamano si los ves necesarios;
 - seguir con el arbol RBS una vez que la base visual quede comoda.
+
+## 2026-05-15 - Migracion a C# WinForms y CustomDocumentProperties
+
+Se migro el add-in de VBA UserForm a C# WinForms y se cambio la persistencia.
+
+### Persistencia: CustomDocumentProperties
+
+Los datos de configuracion (rangos, impactos) se almacenan como **propiedades personalizadas del documento** (`Workbook.CustomDocumentProperties`):
+
+- **API**: `CustomDocumentProperties.Add(Name, LinkToContent, Type, Value)`
+- **Tipo**: `msoPropertyTypeString` (4)
+- **Formato del nombre**: `Apur_Field_X` (ej: `Apur_Field_RbsCodeRange`)
+- **Lectura**: iterar `foreach (prop in workbook.CustomDocumentProperties)`, buscar por `prop.Name`
+- **Escritura**: eliminar propiedad existente (`prop.Delete()`), crear nueva (`Add()`)
+- **Límite**: 255 caracteres por valor (suficiente para direcciones de rango)
+- **Ventaja**: nativo de Excel, invisible al usuario, sin hojas, persiste con el archivo
+
+### Flujo de guardado
+
+```
+BtnAceptar_Click → SaveAllConfig(form)
+  ├── foreach field: SaveConfigProp(workbook, "Field." + key, value)
+  │     ├── Buscar y eliminar prop existente (Delete)
+  │     └── Si value no vacio: Add(propName, false, 4, value)
+  └── ImpactFieldCount tambien se guarda
+```
+
+### Flujo de carga
+
+```
+LoadSavedValues() → foreach key: ReadConfigValue("Field." + key)
+  └── Iterar CustomDocumentProperties buscando "Apur_Field_" + key
+```
+
+### Intentos previos descartados
+
+1. **Hoja `Apurisk_Config`**: Funcionaba pero el usuario no queria hojas visibles
+2. **CustomXMLParts con namespace XML**: Namespace + XPath fallaba con COM late-bound
+3. **CustomXMLParts sin namespace XML**: `LoadXML` multiple en mismo part fallaba (solo primera escritura)
+4. **CustomDocumentProperties**: ✅ Funciona, nativo, confiable

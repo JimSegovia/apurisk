@@ -41,7 +41,7 @@ namespace Apurisk.ExcelAddIn.Forms
                 Size = new Size(110, 26),
                 Font = new Font("Segoe UI", 8f)
             };
-            _btnExpandAll.Click += (s, e) => { SetAllExpanded(_root, true); RebuildAndDraw(); };
+            _btnExpandAll.Click += (s, e) => { if (_root != null) { SetAllExpanded(_root, true); RebuildAndDraw(); } };
             Controls.Add(_btnExpandAll);
 
             _btnCollapseAll = new Button
@@ -51,7 +51,7 @@ namespace Apurisk.ExcelAddIn.Forms
                 Size = new Size(110, 26),
                 Font = new Font("Segoe UI", 8f)
             };
-            _btnCollapseAll.Click += (s, e) => { SetAllExpanded(_root, false); _root.Expanded = true; RebuildAndDraw(); };
+            _btnCollapseAll.Click += (s, e) => { if (_root != null) { SetAllExpanded(_root, false); _root.Expanded = true; RebuildAndDraw(); } };
             Controls.Add(_btnCollapseAll);
 
             _canvas = new Panel

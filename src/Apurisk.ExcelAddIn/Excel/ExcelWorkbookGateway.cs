@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.InteropServices;
-using System.Xml;
 
 namespace Apurisk.ExcelAddIn.Excel
 {
@@ -76,21 +75,31 @@ namespace Apurisk.ExcelAddIn.Excel
 
         public string ReadConfigValue(string keyName)
         {
+            dynamic excel = _excelApplication;
+            dynamic workbook = excel.ActiveWorkbook;
+            if (workbook == null) return string.Empty;
+
             try
             {
-                string xml = GetConfigXml();
-                if (string.IsNullOrEmpty(xml)) return string.Empty;
+                string propName = "Apur_" + keyName.Replace(".", "_");
+                dynamic props = workbook.CustomDocumentProperties;
+                int propCount = props.Count;
 
-                XmlDocument doc = new XmlDocument();
-                doc.LoadXml(xml);
+                for (int i = 1; i <= propCount; i++)
+                {
+                    try
+                    {
+                        dynamic prop = props[i];
+                        string name = prop.Name as string;
+                        if (name == propName)
+                            return (prop.Value ?? string.Empty).ToString();
+                    }
+                    catch { }
+                }
+            }
+            catch { }
 
-                XmlNode node = doc.SelectSingleNode("//e[@k='" + XmlEscape(keyName) + "']");
-                return node != null ? (node.Attributes["v"].Value ?? string.Empty) : string.Empty;
-            }
-            catch
-            {
-                return string.Empty;
-            }
+            return string.Empty;
         }
 
         public int GetImpactFieldCount()
@@ -108,6 +117,10 @@ namespace Apurisk.ExcelAddIn.Excel
 
             string codeAddr = ReadConfigValue("Field.RbsCodeRange");
             string nameAddr = ReadConfigValue("Field.RbsNameRange");
+
+            System.Windows.Forms.MessageBox.Show(
+                "ReadRbsFromRanges:\nRbsCodeRange='" + codeAddr + "'\nRbsNameRange='" + nameAddr + "'",
+                "Apurisk - Debug Read", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Information);
 
             if (string.IsNullOrEmpty(codeAddr))
                 return result;
@@ -213,95 +226,62 @@ namespace Apurisk.ExcelAddIn.Excel
                 "RiskMitigationRange", "RiskOwnerRange"
             };
 
-            XmlDocument doc = new XmlDocument();
-            XmlElement root = doc.CreateElement("apurisk");
-            doc.AppendChild(root);
-
+            int savedCount = 0;
             foreach (var field in fields)
             {
                 string value = form.GetFieldValue(field) ?? string.Empty;
-                XmlElement elem = doc.CreateElement("e");
-                elem.SetAttribute("k", "Field." + field);
-                elem.SetAttribute("v", value);
-                root.AppendChild(elem);
+                SaveConfigProp(workbook, "Field." + field, value);
+                if (!string.IsNullOrEmpty(value)) savedCount++;
             }
 
             string[] impactKeys = form.GetImpactFieldKeys();
             for (int i = 0; i < impactKeys.Length; i++)
             {
                 string value = form.GetFieldValue(impactKeys[i]) ?? string.Empty;
-                XmlElement elem = doc.CreateElement("e");
-                elem.SetAttribute("k", "Field." + impactKeys[i]);
-                elem.SetAttribute("v", value);
-                root.AppendChild(elem);
+                SaveConfigProp(workbook, "Field." + impactKeys[i], value);
             }
 
-            XmlElement countElem = doc.CreateElement("e");
-            countElem.SetAttribute("k", "ImpactFieldCount");
-            countElem.SetAttribute("v", form.ImpactCount.ToString());
-            root.AppendChild(countElem);
+            SaveConfigProp(workbook, "ImpactFieldCount", form.ImpactCount.ToString());
 
-            WriteConfigXml(workbook, doc.OuterXml);
+            System.Windows.Forms.MessageBox.Show(
+                "Guardados " + savedCount + " campos con datos.\nRbsCodeRange: " + (form.GetFieldValue("RbsCodeRange") ?? "(vacio)").ToString() + "\nRbsNameRange: " + (form.GetFieldValue("RbsNameRange") ?? "(vacio)").ToString(),
+                "Apurisk - Debug Save", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Information);
         }
 
-        private string GetConfigXml()
+        private static void SaveConfigProp(dynamic workbook, string key, string value)
         {
-            dynamic excel = _excelApplication;
-            dynamic workbook = excel.ActiveWorkbook;
-            if (workbook == null) return string.Empty;
+            string propName = "Apur_" + key.Replace(".", "_");
 
             try
             {
-                foreach (dynamic part in workbook.CustomXMLParts)
+                dynamic props = workbook.CustomDocumentProperties;
+                int propCount = props.Count;
+
+                for (int i = 1; i <= propCount; i++)
                 {
                     try
                     {
-                        string xml = part.XML as string;
-                        if (xml != null && xml.Contains("<apurisk"))
-                            return xml;
-                    }
-                    catch { }
-                }
-
-                return string.Empty;
-            }
-            catch
-            {
-                return string.Empty;
-            }
-        }
-
-        private void WriteConfigXml(dynamic workbook, string xml)
-        {
-            try
-            {
-                foreach (dynamic part in workbook.CustomXMLParts)
-                {
-                    try
-                    {
-                        string partXml = part.XML as string;
-                        if (partXml != null && partXml.Contains("<apurisk"))
+                        dynamic prop = props[i];
+                        string name = prop.Name as string;
+                        if (name == propName)
                         {
-                            part.Delete();
+                            prop.Delete();
                             break;
                         }
                     }
                     catch { }
                 }
-
-                workbook.CustomXMLParts.Add(xml);
             }
             catch { }
-        }
 
-        private static string XmlEscape(string value)
-        {
-            if (string.IsNullOrEmpty(value)) return value;
-            return value.Replace("&", "&amp;")
-                        .Replace("<", "&lt;")
-                        .Replace(">", "&gt;")
-                        .Replace("\"", "&quot;")
-                        .Replace("'", "&apos;");
+            if (!string.IsNullOrEmpty(value))
+            {
+                try
+                {
+                    workbook.CustomDocumentProperties.Add(propName, false, 4, value);
+                }
+                catch { }
+            }
         }
 
         private static void EnsureSheetInternal(dynamic workbook, string sheetName, string[] headers)
